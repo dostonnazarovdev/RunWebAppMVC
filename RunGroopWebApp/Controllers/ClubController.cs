@@ -2,6 +2,7 @@
 using RunGroopWebApp.Interface;
 using RunGroopWebApp.Models;
 using RunGroopWebApp.ViewModels;
+using System.Diagnostics.Eventing.Reader;
 
 namespace RunGroopWebApp.Controllers
 {
@@ -37,28 +38,29 @@ namespace RunGroopWebApp.Controllers
         public async Task<IActionResult> Create(CreateClubViewModel clubVM)
         {
             var result = await _photoService.AddPhotoAsync(clubVM.Image);
-            if (result == null || result.Url == null)
+            if (ModelState.IsValid)
+            {
+                var clubs = new Club
+                {
+                    Title = clubVM.Title,
+                    Description = clubVM.Description,
+                    Image = result.Url.ToString(),
+                    Address = new Address
+                    {
+                        Street = clubVM.Address.Street,
+                        City = clubVM.Address.City,
+                        State = clubVM.Address.State
+                    }
+                };
+
+                _clubRepository.Add(clubs);
+                return RedirectToAction("Index");
+            }
+            else
             {
                 ModelState.AddModelError("", "Error occurred while uploading photo");
+            }
                 return View(clubVM);
-            }
-
-            var clubs = new Club
-            {
-                Title = clubVM.Title,
-                Description = clubVM.Description,
-                Image = result.Url.ToString(),
-                Address = new Address
-                {
-                    Street = clubVM.Address.Street,
-                    City = clubVM.Address.City,
-                    State = clubVM.Address.State
-                }
-            };
-
-            _clubRepository.Add(clubs);
-            return RedirectToAction("Index");
-            
-            }
-          }
+           }
+        }
     }
